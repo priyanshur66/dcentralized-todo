@@ -77,7 +77,7 @@ const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
         <div className="flex justify-between items-start mb-5">
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl text-gray-800 font-semibold">
             {isLoginMode ? 'Login to DoBlocks' : 'Create an Account'}
           </h2>
           <button
@@ -109,7 +109,7 @@ const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                className="w-full pl-10 p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-gray-800"
                 placeholder="your@email.com"
                 required
               />
@@ -129,7 +129,7 @@ const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                className="w-full pl-10 p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-gray-800"
                 placeholder="••••••••"
                 required
               />
@@ -151,7 +151,7 @@ const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full pl-10 p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                    className="w-full pl-10 p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-gray-800"
                     placeholder="John Doe"
                     required
                   />
@@ -167,7 +167,7 @@ const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
                   type="text"
                   value={walletAddress}
                   onChange={(e) => setWalletAddress(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                  className="w-full p-2 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400 text-gray-800"
                   placeholder="0x..."
                 />
               </div>

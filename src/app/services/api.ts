@@ -6,7 +6,8 @@ import {
 } from './blockchain';
 import { generateTaskDescription } from './langchain';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
+// Use a relative path for API requests to use the Next.js API routes as proxies
+const API_BASE_URL = '/api';
 
 interface AuthUser {
   id: string;
@@ -208,7 +209,7 @@ export const taskService = {
   
   async getAllTasks(): Promise<Task[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/tasks`, {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'GET',
         headers: getHeaders(),
       });
@@ -239,9 +240,7 @@ export const taskService = {
   
   async getTaskById(taskId: string | number): Promise<Task> {
     try {
-      
-
-      const apiEndpoint = `${API_BASE_URL}/api/v1/tasks/${taskId}`;
+      const apiEndpoint = `${API_BASE_URL}/tasks/${taskId}`;
       
       const response = await fetch(apiEndpoint, {
         method: 'GET',
@@ -295,7 +294,7 @@ export const taskService = {
       const apiTaskWithoutBounty = { ...apiTask };
       delete apiTaskWithoutBounty.task_bounty;
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/tasks`, {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(apiTaskWithoutBounty),
@@ -412,7 +411,7 @@ export const taskService = {
       // Log sending to the API
       console.log('Sending to API:', apiTaskWithoutBounty);
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/tasks/${apiTaskId}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${apiTaskId}`, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(apiTaskWithoutBounty),
@@ -452,7 +451,7 @@ export const taskService = {
     try {
 
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/tasks/${taskId}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
         method: 'DELETE',
         headers: getHeaders(),
       });
