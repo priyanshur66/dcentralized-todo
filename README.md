@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DoBlocks - Decentralized To-Do Frontend
+
+This repository contains the frontend for **DoBlocks**, a decentralized to-do application built with Next.js. It provides a user-friendly interface for managing tasks, interacting with an AI assistant, and leverages blockchain technology for task verification and optional bounties.
+
+
+## Features
+
+*   **Task Management:** Add, view, edit, delete, and mark tasks as complete/pending.
+*   **Filtering & Sorting:** Filter tasks by status (All, Pending, Completed) and category.
+*   **Task Details:** View comprehensive details for each task, including AI-generated descriptions.
+*   **Visual Analytics:** Progress bar and an overview section displaying task completion statistics.
+*   **Authentication:** User registration and login  
+*   **Wallet Integration:** Connect with MetaMask 
+*   **Blockchain Features (UI):**
+    *   Displays task verification status via blockchain hash.
+    *   Supports USDT bounties for tasks (locking via smart contract interaction, for approval and claiming).
+    *   Shows USDT balance and contract allowance indicator when wallet is connected.
+*   **AI Assistant:**
+    *   Interactive chat interface (powered by LangChain with Groq/OpenAI) to manage tasks (add, update, query status, find tasks, etc.).
+    *   AI-driven task suggestions banner.
+    *   Automatic generation of task descriptions using AI upon creation.
+    *   supports graphQl queries for better context
+
+
+
+
+## Prerequisites
+
+*   Node.js (v20 or later recommended)
+*   npm, yarn, pnpm, or bun
+*   A compatible web browser with a wallet extension like MetaMask installed and configured for the target testnet  Base Sepolia
+*   setup backend from 
+*   get mock usdt for bounties at https://mockusdt.vercel.app/ 
 
 ## Getting Started
 
-First, run the development server:
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/priyanshur66/dcentralized-todo
+    cd 
+    ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2.  **Set up Environment Variables:**
+    Create a `.env.local` file in the root directory of the project. Copy the contents of `.env.example` and fill in the required values.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+    ```plaintext
+    # .env.local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+    # URL for your running backend API
+    NEXT_PUBLIC_API_URL=http://localhost:3000 # Or your deployed backend URL
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    # Deployed Smart Contract Addresses (on your chosen testnet)
+    NEXT_PUBLIC_CONTRACT_ADDRESS=YOUR_TASK_REGISTRY_CONTRACT_ADDRESS
+    NEXT_PUBLIC_USDT_ADDRESS=YOUR_USDT_TOKEN_CONTRACT_ADDRESS
 
-## Learn More
+    # AI Provider API Keys (Choose one or both)
+    NEXT_PUBLIC_GROQ_API_KEY=YOUR_GROQ_API_KEY # Preferred for faster responses
+    NEXT_PUBLIC_OPENAI_API_KEY=YOUR_OPENAI_API_KEY # Fallback
 
-To learn more about Next.js, take a look at the following resources:
+    # Hasura GraphQL Endpoint Credentials 
+    # The endpoint URL is hardcoded in graphqlClient.ts, only secret is needed here
+    NEXT_PUBLIC_HASURA_ADMIN_SECRET=YOUR_HASURA_ADMIN_SECRET
+    ```
+    *   **Important:** Ensure your backend service (API) is running and accessible at the `NEXT_PUBLIC_API_URL`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3.  **Install Dependencies:**
+    Choose your preferred package manager:
+    ```bash
+    npm install
+    # or
+    yarn install
+    # or
+    pnpm install
+    # or
+    bun install
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4.  **Run the Development Server:**
+    ```bash
+    npm run dev
+    # or
+    yarn dev
+    # or
+    pnpm dev
+    # or
+    bun dev
+    ```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5.  **Open the Application:**
+    Open [http://localhost:3000](http://localhost:3000) (or the port specified) in your browser.
