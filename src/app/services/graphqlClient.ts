@@ -11,7 +11,7 @@ const HASURA_ADMIN_SECRET = process.env.NEXT_PUBLIC_HASURA_ADMIN_SECRET;
  */
 export async function executeGraphQLQuery<T>(
   query: string,
-  variables: Record<string, any> = {}
+  variables: Record<string, unknown> = {}
 ): Promise<T> {
   try {
     const token = authService.isAuthenticated() ? localStorage.getItem('auth_token') : null;
@@ -52,6 +52,20 @@ export async function executeGraphQLQuery<T>(
   }
 }
 
+interface TaskData {
+  task_id: string;
+  task_name: string;
+  task_description: string;
+  task_status: string;
+  task_priority: string;
+  task_category: string;
+  task_due_date: string;
+  task_blockchain_hash: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Get user's tasks from GraphQL API
  * This function is used to fetch tasks for the current authenticated user
@@ -75,7 +89,7 @@ export async function getUserTasks() {
     }
   `;
   
-  return executeGraphQLQuery<{ tasks: any[] }>(query);
+  return executeGraphQLQuery<{ tasks: TaskData[] }>(query);
 }
 
 /**

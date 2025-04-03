@@ -1,23 +1,12 @@
-// src/app/services/api.ts
 import { Task } from '../DecentralizedTodoApp';
 import { 
   generateTaskHash, 
   storeTaskHashOnBlockchain, 
-  completeTaskOnBlockchain,
-  verifyTaskOnBlockchain
+  completeTaskOnBlockchain 
 } from './blockchain';
 import { generateTaskDescription } from './langchain';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ;
-
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  task?: T; 
-  tasks?: T[]; 
-}
 
 interface AuthUser {
   id: string;
@@ -231,14 +220,15 @@ export const taskService = {
       
       const data = await response.json();
       
-      if (Array.isArray(data)) {
-        return data.map((apiTask: any) => this.mapTaskFromApi(apiTask as ApiTask));
+      if (data.tasks && Array.isArray(data.tasks)) {
+        return data.tasks.map((task: ApiTask) => this.mapTaskFromApi(task));
       } else if (data.data && Array.isArray(data.data)) {
-        return data.data.map((apiTask: any) => this.mapTaskFromApi(apiTask as ApiTask));
-      } else if (data.tasks && Array.isArray(data.tasks)) {
-        return data.tasks.map((apiTask: any) => this.mapTaskFromApi(apiTask as ApiTask));
+        return data.data.map((task: ApiTask) => this.mapTaskFromApi(task));
+      } else if (Array.isArray(data)) {
+        // Handle case where the API returns an array directly
+        return data.map((task: ApiTask) => this.mapTaskFromApi(task));
       } else {
-        console.error('Invalid response format:', data);
+        console.error('Invalid API response format:', data);
         return [];
       }
     } catch (error) {
@@ -296,14 +286,14 @@ export const taskService = {
       // Store the task hash as the blockchain hash
       task.blockchainHash = taskHash;
       
-      // Only try to store on blockchain if there's a bounty
-      if (parseFloat(bountyAmount) > 0) {
-        await storeTaskHashOnBlockchain(taskHash, bountyAmount);
-      }
+      // Always store on blockchain regardless of bounty amount
+      await storeTaskHashOnBlockchain(taskHash, bountyAmount);
       
       const apiTask = this.mapTaskToApi(task);
       
-      const { task_bounty, ...apiTaskWithoutBounty } = apiTask;
+      // For API calls, we don't need to send the bounty info
+      const apiTaskWithoutBounty = { ...apiTask };
+      delete apiTaskWithoutBounty.task_bounty;
       
       const response = await fetch(`${API_BASE_URL}/api/v1/tasks`, {
         method: 'POST',
@@ -406,7 +396,7 @@ export const taskService = {
         );
         fullTask.description = description;
         
-        if ((task.title || task.priority || task.category) && parseFloat(fullTask.bounty || '0') > 0) {
+        if ((task.title || task.priority || task.category)) {
           const taskHash = generateTaskHash(fullTask);
           fullTask.blockchainHash = taskHash;
           await storeTaskHashOnBlockchain(taskHash, fullTask.bounty || '0.00');
@@ -415,7 +405,9 @@ export const taskService = {
       
       const apiTask = this.mapTaskToApi(fullTask);
       
-      const { task_bounty, ...apiTaskWithoutBounty } = apiTask;
+      // For API calls, we don't need to send the bounty info
+      const apiTaskWithoutBounty = { ...apiTask };
+      delete apiTaskWithoutBounty.task_bounty;
       
       // Log sending to the API
       console.log('Sending to API:', apiTaskWithoutBounty);

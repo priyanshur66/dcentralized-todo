@@ -69,7 +69,6 @@ const WalletBalanceIndicator = ({ walletConnected }: WalletBalanceIndicatorProps
   }
   
   const formattedBalance = parseFloat(usdtBalance).toFixed(2);
-  const formattedAllowance = parseFloat(usdtAllowance).toFixed(2);
   const hasAllowance = parseFloat(usdtAllowance) > 0;
   
   return (

@@ -5,15 +5,13 @@ import { completeTaskOnBlockchain, verifyTaskOnBlockchain } from '../../services
 import { useState, useEffect } from 'react';
 
 interface TaskDetailsModalProps {
-  isOpen: boolean;
   task: Task;
   onClose: () => void;
   onEdit: () => void;
-  onDelete: () => void;
   onComplete: (complete: boolean) => void;
 }
 
-const TaskDetailsModal = ({ isOpen, task, onClose, onEdit, onDelete, onComplete }: TaskDetailsModalProps) => {
+const TaskDetailsModal = ({ task, onClose, onEdit, onComplete }: TaskDetailsModalProps) => {
   const [isClaimingBounty, setIsClaimingBounty] = useState(false);
   const [blockchainStatus, setBlockchainStatus] = useState<{
     owner: string;
@@ -21,7 +19,6 @@ const TaskDetailsModal = ({ isOpen, task, onClose, onEdit, onDelete, onComplete 
     completed: boolean;
     exists: boolean;
   } | null>(null);
-  const [verifyingStatus, setVerifyingStatus] = useState(false);
   const [claimError, setClaimError] = useState("");
   const [claimSuccess, setClaimSuccess] = useState(false);
 
@@ -35,13 +32,10 @@ const TaskDetailsModal = ({ isOpen, task, onClose, onEdit, onDelete, onComplete 
     const verifyTask = async () => {
       if (isVerifiedOnBlockchain) {
         try {
-          setVerifyingStatus(true);
           const status = await verifyTaskOnBlockchain(task.blockchainHash!);
           setBlockchainStatus(status);
         } catch (error) {
           console.error("Error verifying task on blockchain:", error);
-        } finally {
-          setVerifyingStatus(false);
         }
       }
     };
@@ -222,7 +216,7 @@ const TaskDetailsModal = ({ isOpen, task, onClose, onEdit, onDelete, onComplete 
           </button>
           <button
             onClick={() => {
-              onComplete(task.completed);
+              onComplete(!task.completed);
               onClose(); 
             }}
             className={`flex items-center justify-center px-4 py-2 rounded text-sm text-white w-full sm:w-auto ${

@@ -1,12 +1,10 @@
 "use client";
-import { List, ChevronDown, LogIn } from 'lucide-react';
+import { List, LogIn } from 'lucide-react';
 import WalletBalanceIndicator from './WalletBalanceIndicator';
 
 interface HeaderProps {
   showSidebar: boolean;
   onToggleSidebar: () => void;
-  filterPriority: "All" | "High" | "Medium" | "Low";
-  onSetFilterPriority: (priority: "All" | "High" | "Medium" | "Low") => void;
   isAuthenticated: boolean;
   onShowLogin: () => void;
   walletConnected: boolean;
@@ -15,8 +13,6 @@ interface HeaderProps {
 const Header = ({
   showSidebar,
   onToggleSidebar,
-  filterPriority,
-  onSetFilterPriority,
   isAuthenticated,
   onShowLogin,
   walletConnected,
@@ -44,22 +40,6 @@ const Header = ({
             </div>
           )}
           
-          {/* Priority Filter Dropdown */}
-          {/* <div className="relative">
-             <select
-               value={filterPriority}
-               onChange={(e) => onSetFilterPriority(e.target.value as "All" | "High" | "Medium" | "Low")}
-               className="text-xs sm:text-sm border rounded py-1 sm:py-1.5 pl-2 pr-6 sm:pr-8 appearance-none focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
-               aria-label="Filter by priority"
-             >
-               <option value="All">All</option>
-               <option value="High">High</option>
-               <option value="Medium">Medium</option>
-               <option value="Low">Low</option>
-             </select>
-             <ChevronDown size={14} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
-          </div> */}
-
           {/* Login Button  */}
           {!isAuthenticated && (
             <button 

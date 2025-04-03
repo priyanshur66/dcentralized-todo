@@ -1,16 +1,14 @@
-// src/app/components/Modals/LoginModal.tsx
 "use client";
 import { useState } from 'react';
 import { User, Key, Mail, UserPlus, X } from 'lucide-react';
 import { authService } from '../../services/api';
 
 interface LoginModalProps {
-  isOpen: boolean;
   onClose: () => void;
   onLoginSuccess: (token: string, walletAddress: string | null) => void;
 }
 
-const LoginModal = ({ isOpen, onClose, onLoginSuccess }: LoginModalProps) => {
+const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,7 +56,7 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }: LoginModalProps) => {
         onLoginSuccess(response.token, response.user.walletAddress);
       } else {
         // Handle registration
-        const response = await authService.register(
+        await authService.register(
           email, 
           password, 
           displayName,
@@ -196,11 +194,11 @@ const LoginModal = ({ isOpen, onClose, onLoginSuccess }: LoginModalProps) => {
             {isLoginMode ? (
               <>
                 <UserPlus size={16} className="mr-1" />
-                Don't have an account? Register
+                Don&apos;t have an account? Register
               </>
             ) : (
               <>
-                <Key size={16} className="mr-1" />
+                <User size={16} className="mr-1" />
                 Already have an account? Login
               </>
             )}

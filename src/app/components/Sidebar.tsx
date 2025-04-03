@@ -1,5 +1,5 @@
 "use client";
-import { List, LogOut, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import ChatAssistant from './ChatAssistant'; 
 import { ChatMessage } from '../DecentralizedTodoApp'; 
 

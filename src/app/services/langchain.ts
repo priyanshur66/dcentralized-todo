@@ -215,7 +215,7 @@ function mockTaskSuggestions(tasks: Task[]): string[] {
   
   // If we have tasks, we can generate more specific suggestions
   if (tasks.length > 0) {
-    const suggestions = [];
+    const suggestions: string[] = [];
     
     // Check for overdue tasks
     const today = new Date().toISOString().split('T')[0];

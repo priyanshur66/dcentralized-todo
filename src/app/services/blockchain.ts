@@ -33,10 +33,8 @@ const USDT_ADDRESS = process.env.NEXT_PUBLIC_USDT_ADDRESS || "0x741e049ed61A5EBa
  * @returns A bytes32 hash string
  */
 export function generateTaskHash(task: Task): string {
- 
-  // For now, we'll use a mock implementation
+  // Create a string representation of the task
   const taskString = JSON.stringify({
-    id: task.id,
     title: task.title,
     category: task.category,
     priority: task.priority,
@@ -47,7 +45,7 @@ export function generateTaskHash(task: Task): string {
   try {
     // If ethers is available, use proper hashing
     return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(taskString));
-  } catch (error) {
+  } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
     // Fallback for environments where ethers isn't available
     let hash = 0;
     for (let i = 0; i < taskString.length; i++) {
@@ -210,7 +208,14 @@ export async function storeTaskHashOnBlockchain(taskHash: string, bountyAmount: 
       console.error('Error storing task hash on blockchain:', error);
       
       // If this is an allowance error, throw it so we can handle it specifically
-      const err = error as any; // Type assertion for the error
+      const err = error as {
+        message?: string;
+        code?: number;
+        data?: {
+          message?: string;
+        };
+      }; // Type for the error
+      
       if (
         (err.message && (
           err.message.includes('allowance') || 
@@ -308,78 +313,137 @@ export async function verifyTaskOnBlockchain(taskHash: string): Promise<{
   completed: boolean;
   exists: boolean;
 } | null> {
-  console.log('Verifying task on blockchain:', taskHash);
+  console.log('Verifying task hash on blockchain:', taskHash);
   
-  // Check if taskHash is valid
-  if (!taskHash || taskHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
-    console.log('Invalid task hash, skipping blockchain verification');
-    return null;
-  }
-  
-  try {
-    // Check if we're in development mode or don't have ethereum provider
-    if (process.env.NODE_ENV === 'development' || !window.ethereum) {
-      console.log('Using mock blockchain verification');
+  // Check if window is defined (client-side only)
+  if (typeof window !== 'undefined') {
+    try {
+      // Check if we're in development mode or don't have ethereum provider
+      if (process.env.NODE_ENV === 'development' && !window.ethereum) {
+        console.log('Using mock blockchain implementation for verification');
+        return await mockVerifyTask(taskHash);
+      }
+      
+      // Real implementation using ethers.js and MetaMask
+      const { provider } = await getProvider();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, taskRegistryABI, provider);
+      
+      // Convert string hash to bytes32 if it's not already
+      const bytes32Hash = taskHash.startsWith('0x') && taskHash.length === 66 
+        ? taskHash 
+        : ethers.utils.id(taskHash);
+      
+      // Query task details
+      const task = await contract.tasks(bytes32Hash);
+      
+      // If owner is zero address, task doesn't exist
+      if (task.owner === '0x0000000000000000000000000000000000000000') {
+        return {
+          owner: '0x0000000000000000000000000000000000000000',
+          bounty: '0.00',
+          completed: false,
+          exists: false
+        };
+      }
+      
+      return {
+        owner: task.owner,
+        bounty: ethers.utils.formatUnits(task.bountyAmount, 6),
+        completed: task.completed,
+        exists: true
+      };
+    } catch (error) {
+      console.error('Error verifying task on blockchain:', error);
       return await mockVerifyTask(taskHash);
     }
-    
-    const { provider } = await getProvider();
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, taskRegistryABI, provider);
-    
-    const bytes32Hash = taskHash.startsWith('0x') && taskHash.length === 66 
-      ? taskHash 
-      : ethers.utils.id(taskHash);
-    
-    const result = await contract.getTaskDetails(bytes32Hash);
-    
-    return {
-      owner: result.owner,
-      bounty: ethers.utils.formatUnits(result.bounty, 6), 
-      completed: result.completed,
-      exists: result.exists
-    };
-  } catch (error) {
-    console.error('Error verifying task on blockchain:', error);
+  } else {
+    // Server-side rendering, return a mock
     return await mockVerifyTask(taskHash);
   }
 }
 
 /**
  * Mock implementation for task verification
- * @param taskHash The hash to "verify"
  * @returns Mock task details
  */
-async function mockVerifyTask(taskHash: string): Promise<{
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function mockVerifyTask(hash: string): Promise<{
   owner: string;
   bounty: string;
   completed: boolean;
   exists: boolean;
 }> {
-  await new Promise(resolve => setTimeout(resolve, 500));
+  // Generate a random wallet address
+  const randomAddress = `0x${Math.random().toString(16).substring(2, 42).padStart(40, '0')}`;
   
-  let mockOwner = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F'; // Default mock address
-  
-  if (typeof window !== 'undefined' && window.ethereum) {
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts && accounts.length > 0) {
-        mockOwner = accounts[0]; 
-      }
-    } catch (error) {
-      console.error('Error getting wallet accounts in mockVerifyTask:', error);
-    }
-  }
+  // Random bounty between 0 and 10 USDT
+  const randomBounty = (Math.random() * 10).toFixed(2); 
   
   return {
-    owner: mockOwner,
-    bounty: '10.00',
-    completed: false,
+    owner: randomAddress,
+    bounty: randomBounty,
+    completed: Math.random() > 0.5,
     exists: true
   };
 }
 
-declare global {
-  interface Window {
-    ethereum?: any;
+/**
+ * Debug function to check USDT contract details
+ * Returns various information about the USDT contract
+ */
+export async function debugUSDTContract(): Promise<{
+  name: string;
+  symbol: string;
+  decimals: number;
+  totalSupply: string;
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const { provider } = await getProvider();
+    
+    // Extended ABI that includes name, symbol, decimals
+    const extendedABI = [
+      ...usdtABI,
+      "function name() external view returns (string)",
+      "function symbol() external view returns (string)",
+      "function decimals() external view returns (uint8)",
+      "function totalSupply() external view returns (uint256)"
+    ];
+    
+    console.log('Debugging USDT contract at address:', USDT_ADDRESS);
+    const usdtContract = new ethers.Contract(USDT_ADDRESS, extendedABI, provider);
+    
+    // Get basic token information
+    const name = await usdtContract.name();
+    const symbol = await usdtContract.symbol();
+    const decimals = await usdtContract.decimals();
+    const totalSupply = await usdtContract.totalSupply();
+    
+    console.log('USDT contract details:', {
+      name,
+      symbol,
+      decimals: decimals.toString(),
+      totalSupply: totalSupply.toString(),
+      formattedTotalSupply: ethers.utils.formatUnits(totalSupply, decimals)
+    });
+    
+    return {
+      name,
+      symbol,
+      decimals,
+      totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
+      success: true
+    };
+  } catch (error) {
+    console.error('Error debugging USDT contract:', error);
+    return {
+      name: 'Unknown',
+      symbol: 'Unknown',
+      decimals: 0,
+      totalSupply: '0',
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
   }
 }

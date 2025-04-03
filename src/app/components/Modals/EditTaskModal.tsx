@@ -4,13 +4,12 @@ import { Task } from '../../DecentralizedTodoApp';
 import { X, ExternalLink } from 'lucide-react';
 
 interface EditTaskModalProps {
-  isOpen: boolean;
   task: Task;
   onClose: () => void;
   onSave: (updatedTask: Task) => void;
 }
 
-const EditTaskModal = ({ isOpen, task, onClose, onSave }: EditTaskModalProps) => {
+const EditTaskModal = ({ task, onClose, onSave }: EditTaskModalProps) => {
   const [editedTask, setEditedTask] = useState<Task>(task);
 
   useEffect(() => {

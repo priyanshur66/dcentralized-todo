@@ -89,10 +89,10 @@ const DecentralizedTodoApp = () => {
         const isAuth = authService.isAuthenticated();
         setIsAuthenticated(isAuth);
         
-        // Try to connect wallet at startup if ethereum provider exists
+        // Check wallet connection status
         if (typeof window !== 'undefined' && window.ethereum) {
           try {
-            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
             if (accounts && accounts.length > 0) {
               setWalletConnected(true);
               setWalletAddress(accounts[0]);
@@ -124,16 +124,19 @@ const DecentralizedTodoApp = () => {
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return;
     
-    const handleAccountsChanged = (accounts: string[]) => {
-      if (accounts.length === 0) {
+    const ethereum = window.ethereum;
+    
+    const handleAccountsChanged = (accounts: unknown) => {
+      const accountsArray = accounts as string[];
+      if (accountsArray.length === 0) {
         setWalletConnected(false);
         setWalletAddress("");
         addChatMessage({ sender: 'ai', text: 'Wallet disconnected.' });
       } else {
-        setWalletAddress(accounts[0]);
+        setWalletAddress(accountsArray[0]);
         addChatMessage({ 
           sender: 'ai', 
-          text: `Wallet switched to ${accounts[0].substring(0, 6)}...${accounts[0].substring(accounts[0].length - 4)}` 
+          text: `Wallet switched to ${accountsArray[0].substring(0, 6)}...${accountsArray[0].substring(accountsArray[0].length - 4)}` 
         });
       }
     };
@@ -150,14 +153,14 @@ const DecentralizedTodoApp = () => {
     };
     
     // Add event listeners
-    window.ethereum.on('accountsChanged', handleAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
-    window.ethereum.on('disconnect', handleDisconnect);
+    ethereum.on('accountsChanged', handleAccountsChanged);
+    ethereum.on('chainChanged', handleChainChanged);
+    ethereum.on('disconnect', handleDisconnect);
     
     return () => {
-      window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      window.ethereum.removeListener('chainChanged', handleChainChanged);
-      window.ethereum.removeListener('disconnect', handleDisconnect);
+      ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      ethereum.removeListener('chainChanged', handleChainChanged);
+      ethereum.removeListener('disconnect', handleDisconnect);
     };
   }, []);
 
@@ -269,7 +272,7 @@ const DecentralizedTodoApp = () => {
   const connectWallet = async () => {
     try {
       if (typeof window !== 'undefined' && window.ethereum) {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
         const addr = accounts[0]; // Get the first account
         
         setWalletConnected(true);
@@ -414,7 +417,7 @@ const processAIResponse = (input: string, taskContext: string = "") => {
   
   if (completeMatch) {
     const taskIdentifier = completeMatch[2] || completeMatch[3];
-    handleTaskCompletion(taskIdentifier, true);
+    handleTaskCompletion(taskIdentifier);
     return;
   }
   
@@ -423,7 +426,7 @@ const processAIResponse = (input: string, taskContext: string = "") => {
   
   if (uncompleteMatch) {
     const taskIdentifier = uncompleteMatch[2] || uncompleteMatch[3];
-    handleTaskCompletion(taskIdentifier, false);
+    handleTaskCompletion(taskIdentifier);
     return;
   }
   
@@ -691,7 +694,7 @@ const handleTaskDeletion = (taskIdentifier: string) => {
 };
 
 // Handle toggling task completion through chat
-const handleTaskCompletion = (taskIdentifier: string, complete: boolean) => {
+const handleTaskCompletion = (taskIdentifier: string) => {
   const task = findTaskByIdentifier(taskIdentifier);
   
   if (!task) {
@@ -715,20 +718,13 @@ const handleTaskCompletion = (taskIdentifier: string, complete: boolean) => {
     return;
   }
   
-  // If task is already in the requested state, inform the user
-  if (task.completed === complete) {
-    addChatMessage({ 
-      sender: 'ai', 
-      text: `Task "${task.title}" is already ${complete ? 'completed' : 'pending'}.` 
-    });
-    return;
-  }
-  
-  toggleTaskCompletion(task.id);
+  // Toggle the task's completion status
+  const updatedTask = { ...task, completed: !task.completed };
+  handleUpdateTask(updatedTask);
   
   addChatMessage({ 
     sender: 'ai', 
-    text: `Marked task "${task.title}" as ${complete ? 'completed' : 'pending'}.` 
+    text: `Marked task "${task.title}" as ${!task.completed ? 'completed' : 'pending'}.` 
   });
 };
 
@@ -1052,70 +1048,47 @@ const handleTaskSearch = (searchTerm: string) => {
 
   const handleUpdateTask = async (updatedTask: Task) => {
     try {
-      const originalTask = tasks.find(task => task.id === updatedTask.id);
-      if (!originalTask) return;
+      setIsLoading(true);
       
-      // Optimistic UI update
-      setTasks(tasks.map(task =>
-          task.id === updatedTask.id ? updatedTask : task
-      ));
+      const apiTaskId = updatedTask.originalId || updatedTask.id.toString();
+      const response = await taskService.updateTask(apiTaskId, updatedTask);
       
-      // Close modals
-      setEditingTask(null); 
-      setShowTaskDetails(null); 
+      // Update the task in the list
+      const updatedTasks = tasks.map(t => t.id === updatedTask.id ? { ...updatedTask, ...response } : t);
+      setTasks(updatedTasks);
       
-      try {
-        const apiTaskId = updatedTask.originalId || originalTask.originalId || updatedTask.id.toString();
-        
-        if (originalTask.originalId && !updatedTask.originalId) {
-          updatedTask.originalId = originalTask.originalId;
-        }
-        
-        if (!updatedTask.blockchainHash && originalTask.blockchainHash) {
-          updatedTask.blockchainHash = originalTask.blockchainHash;
-        }
-        
-        await taskService.updateTask(apiTaskId, updatedTask);
-        
-        addChatMessage({ sender: 'ai', text: `Task "${updatedTask.title}" updated.` });
-      } catch (apiError) {
-        console.error('API Error when saving task update:', apiError);
-        
-        // Set error state but keep the UI updated
-        setError(apiError instanceof Error ? apiError.message : 'Failed to save task changes to server, but changes were applied locally');
-        
-        addChatMessage({ 
-          sender: 'ai', 
-          text: `Task "${updatedTask.title}" updated locally. Note: There was an issue saving to the server, but your changes are visible.` 
-        });
-      }
-    } catch (err) {
-      // Revert changes on error
-      setTasks([...tasks]); 
+      setEditingTask(null);
+      setShowTaskDetails(null);
       
-      setError(err instanceof Error ? err.message : 'Failed to update task');
+      // Add a chat message
+      const completionStatus = updatedTask.completed ? "completed" : "updated";
       addChatMessage({ 
         sender: 'ai', 
-        text: "I couldn't update that task. Please try again." 
+        text: `Task "${updatedTask.title}" has been ${completionStatus}.` 
       });
+      
+    } catch (error) {
+      console.error('Error updating task:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update task');
+      
+      addChatMessage({ 
+        sender: 'ai', 
+        text: `I couldn't update "${updatedTask.title}". Please try again.` 
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleEditRequest = (task: Task) => {
-    setEditingTask(task);
-    setShowTaskDetails(null); 
   };
 
   const handleShowDetails = (task: Task) => {
     setShowTaskDetails(task);
-    setEditingTask(null); 
+    setEditingTask(null);
   };
 
   return (
     <div className="h-screen flex flex-col">
       {showLogin && (
         <LoginModal
-          isOpen={showLogin}
           onClose={() => isAuthenticated && setShowLogin(false)}
           onLoginSuccess={handleLoginSuccess}
         />
@@ -1124,36 +1097,28 @@ const handleTaskSearch = (searchTerm: string) => {
       {/* Modals */}
       {showAddTask && (
         <AddTaskModal
-          isOpen={showAddTask}
           onClose={() => setShowAddTask(false)}
           onAddTask={handleAddTask}
-          walletConnected={walletConnected}
         />
       )}
       
       {showTaskDetails && (
         <TaskDetailsModal
-          isOpen={!!showTaskDetails}
           task={showTaskDetails}
-          onClose={() => setShowTaskDetails(null)}
+          onClose={() => {
+            setShowTaskDetails(null);
+            setEditingTask(null);
+          }}
           onEdit={() => {
+            setShowTaskDetails(null);
             setEditingTask(showTaskDetails);
-            setShowTaskDetails(null);
           }}
-          onDelete={() => {
-            handleDeleteTask(showTaskDetails.id);
-            setShowTaskDetails(null);
-          }}
-          onComplete={(complete: boolean) => {
-            toggleTaskCompletion(showTaskDetails.id);
-            setShowTaskDetails(null);
-          }}
+          onComplete={complete => handleUpdateTask({...showTaskDetails, completed: complete})}
         />
       )}
       
       {editingTask && (
         <EditTaskModal
-          isOpen={!!editingTask}
           task={editingTask}
           onClose={() => setEditingTask(null)}
           onSave={handleUpdateTask}
@@ -1163,8 +1128,6 @@ const handleTaskSearch = (searchTerm: string) => {
       <Header
         showSidebar={showSidebar}
         onToggleSidebar={() => setShowSidebar(!showSidebar)}
-        filterPriority={filterPriority as "All" | "High" | "Medium" | "Low"}
-        onSetFilterPriority={setFilterPriority}
         isAuthenticated={isAuthenticated}
         onShowLogin={() => setShowLogin(true)}
         walletConnected={walletConnected}

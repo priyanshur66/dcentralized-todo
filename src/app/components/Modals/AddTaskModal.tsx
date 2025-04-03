@@ -4,17 +4,14 @@ import { Brain, DollarSign, HelpCircle } from 'lucide-react';
 import { checkUSDTBalance, checkUSDTAllowance, approveUSDTSpending, getUSDTBalance } from '../../services/blockchain';
 
 interface AddTaskModalProps {
-    isOpen: boolean;
     onClose: () => void;
     onAddTask: (title: string, bounty: string) => void;
-    walletConnected: boolean;
 }
 
-const AddTaskModal = ({ isOpen, onClose, onAddTask, walletConnected }: AddTaskModalProps) => {
+const AddTaskModal = ({ onClose, onAddTask }: AddTaskModalProps) => {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [bountyAmount, setBountyAmount] = useState("0.00");
     const [usdtBalance, setUsdtBalance] = useState<string>("0.00");
-    const [usdtAllowance, setUsdtAllowance] = useState<string>("0.00");
     const [needsApproval, setNeedsApproval] = useState<boolean>(false);
     const [isApprovingUSDT, setIsApprovingUSDT] = useState<boolean>(false);
     const [showBountyHelp, setShowBountyHelp] = useState<boolean>(false);
@@ -25,10 +22,9 @@ const AddTaskModal = ({ isOpen, onClose, onAddTask, walletConnected }: AddTaskMo
         const fetchBalanceAndAllowance = async () => {
             try {
                 const balance = await getUSDTBalance();
-                const allowance = await checkUSDTAllowance();
+                await checkUSDTAllowance(); // We'll check but not store it since it's unused
                 
                 setUsdtBalance(balance);
-                setUsdtAllowance(allowance);
             } catch (error) {
                 console.error("Error fetching balance or allowance:", error);
             }
@@ -43,7 +39,6 @@ const AddTaskModal = ({ isOpen, onClose, onAddTask, walletConnected }: AddTaskMo
             if (parseFloat(bountyAmount) > 0) {
                 try {
                     const allowance = await checkUSDTAllowance();
-                    setUsdtAllowance(allowance);
                     
                     const needsApproval = parseFloat(allowance) < parseFloat(bountyAmount);
                     console.log('Checking USDT approval status:', { allowance, bountyAmount, needsApproval });
@@ -106,7 +101,6 @@ const AddTaskModal = ({ isOpen, onClose, onAddTask, walletConnected }: AddTaskMo
                 
                 if (parseFloat(newAllowance) >= parseFloat(bountyAmount)) {
                     approved = true;
-                    setUsdtAllowance(newAllowance);
                     setNeedsApproval(false);
                     break;
                 }
@@ -117,8 +111,6 @@ const AddTaskModal = ({ isOpen, onClose, onAddTask, walletConnected }: AddTaskMo
             
             if (!approved) {
                 console.warn('Approval may not have been processed yet, but transaction was sent');
-                const finalAllowance = await checkUSDTAllowance();
-                setUsdtAllowance(finalAllowance);
             }
         } catch (error) {
             console.error("Error approving USDT:", error);
