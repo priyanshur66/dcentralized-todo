@@ -1,6 +1,6 @@
 "use client";
 import { Task } from '../DecentralizedTodoApp'; 
-import { Check, Calendar, Edit, Trash2 } from 'lucide-react';
+import { Check, Calendar, Edit, Trash2, Shield, DollarSign } from 'lucide-react';
 
 interface TaskItemProps {
   task: Task;
@@ -11,6 +11,12 @@ interface TaskItemProps {
 }
 
 const TaskItem = ({ task, onToggleComplete, onDelete, onEdit, onShowDetails }: TaskItemProps) => {
+  // Check if the task has a bounty
+  const hasBounty = task.bounty && parseFloat(task.bounty) > 0;
+  
+  // Check if the task is verified on blockchain
+  const isVerifiedOnBlockchain = task.blockchainHash && task.blockchainHash !== '0x0000000000000000000000000000000000000000000000000000000000000000';
+
   return (
     <div
       onClick={() => onShowDetails(task)}
@@ -25,7 +31,7 @@ const TaskItem = ({ task, onToggleComplete, onDelete, onEdit, onShowDetails }: T
         className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mr-4 transition-colors duration-200 ${
           task.completed
             ? 'bg-green-500 border-green-500 text-white'
-            : 'border-gray-300 hover:border-blue-400 group-hover:border-blue-400'
+            : 'border-gray-400 hover:border-blue-400 group-hover:border-blue-400'
         }`}
       >
         {task.completed && <Check size={12} strokeWidth={3}/>}
@@ -33,13 +39,41 @@ const TaskItem = ({ task, onToggleComplete, onDelete, onEdit, onShowDetails }: T
 
       {/* Task Info */}
       <div className="flex-grow overflow-hidden">
-        <h3 className={`font-medium truncate ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-          {task.title}
-        </h3>
+        <div className="flex items-center">
+          <h3 className={`font-medium truncate ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+            {task.title}
+          </h3>
+          {isVerifiedOnBlockchain && (
+            <span 
+              className="ml-2 text-green-600" 
+              title="Verified on blockchain"
+            >
+              <Shield size={14} />
+            </span>
+          )}
+          {hasBounty && (
+            <span 
+              className="ml-2 bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center"
+              title={`${task.bounty} USDT bounty`}
+            >
+              <DollarSign size={10} className="mr-0.5" />
+              {task.bounty}
+            </span>
+          )}
+        </div>
+        
+        {/* Short description preview if available */}
+        {task.description && (
+          <p className="text-xs text-gray-500 truncate mt-0.5 mb-1 max-w-[90%]">
+            {task.description.substring(0, 80)}
+            {task.description.length > 80 ? '...' : ''}
+          </p>
+        )}
+        
         <div className="flex items-center flex-wrap mt-1 text-xs text-gray-500 gap-x-3 gap-y-1">
           <div className="flex items-center" title="Due Date">
-            <Calendar size={12} className="mr-1" />
-            {task.due}
+            <Calendar size={12} className="mr-1 text-gray-600" />
+            <span className="text-gray-600">{task.due}</span>
           </div>
           <div
             title="Priority"

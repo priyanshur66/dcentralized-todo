@@ -1,54 +1,68 @@
 "use client";
 import { Task } from '../DecentralizedTodoApp';
 import TaskItem from './TaskItem';
-import { Check, Plus } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface TaskListProps {
   tasks: Task[];
   onToggleComplete: (id: number) => void;
-  onDelete: (id: number) => void;
-  onEdit: (task: Task) => void;
+  onDeleteTask: (id: number) => void;
+  onEditTask: (task: Task) => void;
   onShowDetails: (task: Task) => void;
-  onShowAddTask: () => void; 
 }
 
 const TaskList = ({
   tasks,
   onToggleComplete,
-  onDelete,
-  onEdit,
+  onDeleteTask,
+  onEditTask,
   onShowDetails,
-  onShowAddTask,
 }: TaskListProps) => {
+  const idMap = new Map<number, number>();
+  
+
+  // todo 
+
+  const processedTasks = tasks.map(task => {
+    if (idMap.has(task.id)) {
+      const count = idMap.get(task.id)! + 1;
+      idMap.set(task.id, count);
+      
+      // Create a modified task with a unique ID
+      return {
+        ...task,
+        id: task.id * 1000 + count 
+      };
+    } else {
+      // Add this ID to the map
+      idMap.set(task.id, 1);
+      
+      // Return the original task
+      return task;
+    }
+  });
+  
   return (
-    <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-      {tasks.length === 0 ? (
-        <div className="text-center py-16">
+    <div className="space-y-3">
+      {processedTasks.length === 0 ? (
+        <div className="text-center py-10">
           <div className="text-gray-400 mb-4">
             <Check size={48} className="mx-auto" />
           </div>
           <h3 className="text-lg font-medium text-gray-600">All caught up!</h3>
           <p className="text-gray-500 mt-1 text-sm">No tasks match your current filters.</p>
-          <button
-            onClick={onShowAddTask}
-            className="mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-blue-700 transition mx-auto text-sm"
-          >
-            <Plus size={16} className="mr-1" /> Add New Task
-          </button>
         </div>
       ) : (
-        <div className="space-y-3">
-          {tasks.map(task => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onToggleComplete={onToggleComplete}
-              onDelete={onDelete}
-              onEdit={onEdit}
-              onShowDetails={onShowDetails}
-            />
-          ))}
-        </div>
+        processedTasks.map(task => (
+          <TaskItem
+            key={`task-${task.id}`} 
+            task={task}
+            onToggleComplete={onToggleComplete}
+            onDelete={onDeleteTask}
+            onEdit={onEditTask}
+            onShowDetails={onShowDetails}
+          />
+        ))
       )}
     </div>
   );
