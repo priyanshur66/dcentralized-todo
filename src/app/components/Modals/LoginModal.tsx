@@ -160,7 +160,7 @@ const LoginModal = ({ onClose, onLoginSuccess }: LoginModalProps) => {
 
               <div>
                 <label htmlFor="walletAddress" className="block text-sm font-medium mb-1 text-gray-700">
-                  Wallet Address (Optional)
+                  Wallet Address 
                 </label>
                 <input
                   id="walletAddress"
